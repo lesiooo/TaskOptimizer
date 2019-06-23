@@ -1,4 +1,4 @@
-import pyodbc
+import pypyodbc as pyodbc
 import operator
 from random import randint
 from datetime import datetime, timedelta
@@ -6,10 +6,12 @@ from flask import Flask, jsonify
 import json
 
 app = Flask(__name__)
-
-conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net,1433',
+try:
+	conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net,1433',
                       user='NexioIntranetAdmin', password='BarackObama#2019', database='EventAnalyzer')
-
+except:
+	print('Blad polaczenia')
+	
 CRITICAL_PRIORITY = [8, 9, 10]
 
 

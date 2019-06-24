@@ -12,12 +12,14 @@ def connect_database():
     try:
         conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net;PORT=1433;'+
                           'database=EventAnalyzer;UID=NexioIntranetAdmin;PWD=BarackObama#2019')
+
         return conn
     except Exception as e:
         print('e')
         return e
 	
 CRITICAL_PRIORITY = [8, 9, 10]
+PAUSE_TIME = 300
 conn = connect_database()
 print(conn)
 
@@ -56,12 +58,12 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
                                    task[1] == user and task[0] != task_id and task[3] >= time_to_insert]
                 if tasks_to_update:
                     update_time_existed_user_tasks(tasks_to_update, task_time)
-                users_time[user] += task_time
+                users_time[user] += task_time + PAUSE_TIME
         else:
             avaliables_users = check_availability(task_time, users_time, users_id)
             if avaliables_users:
                 random_user = randint(0, len(avaliables_users) - 1)
-                users_time[avaliables_users[random_user]] += task_time
+                users_time[avaliables_users[random_user]] += task_time + PAUSE_TIME
                 assigned_tasks_to_insert.append([task_id, avaliables_users[random_user], task_time])
 
     return assigned_tasks_to_insert
@@ -101,8 +103,8 @@ def insert_assigned_task_to_database(assigned_tasks):
                                                                                                                 user_id])
         insert = 'INSERT INTO [tasks].[UserTask] values ({},{}, \'{}\', \'{}\');'.format(user_id, task_id,
                                                                                          str(assign_date)[:-3], str(
-                (assign_date + timedelta(seconds=task_time-300)))[:-3])
-        user_tasks_start_time[user_id] += task_time
+                (assign_date + timedelta(seconds=task_time)))[:-3])
+        user_tasks_start_time[user_id] += task_time + PAUSE_TIME
         cursor.execute(insert)
         cursor.commit()
 
@@ -120,7 +122,7 @@ def update_time_existed_user_tasks(tasks, added_time):
     for task in tasks:
         update = 'Update [tasks].[UserTask] set [start] = \'{}\', [to] = \'{}\' where id = {};'.format(
             task[3] + timedelta(seconds=added_time),
-            task[4] + timedelta(seconds=added_time-300), task[0])
+            task[4] + timedelta(seconds=added_time), task[0])
         cursor.execute(update)
     # cursor.commit()
     cursor.close()
@@ -133,14 +135,17 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
-    conn = connect_database()
-    users, tasks, assigned_tasks = load_data()
-    sorted_by_prioryty_tasks = tasks[:]
-    sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
-    new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
-    insert_assigned_task_to_database(new_assigned)
-
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+    pass
+
+conn = connect_database()
+users, tasks, assigned_tasks = load_data()
+sorted_by_prioryty_tasks = tasks[:]
+sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
+new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
+insert_assigned_task_to_database(new_assigned)
+
+
 
 
 if __name__ == '__main__':

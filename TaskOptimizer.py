@@ -22,13 +22,15 @@ def connect_database():
 CRITICAL_PRIORITY = [8, 9, 10]
 PAUSE_TIME = 300
 
-conn = None
+
 
 def get_connection():
     global conn
     if not conn:
         conn = connect_database()
     return conn
+
+
 
 
 def load_data():
@@ -145,7 +147,7 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
-    conn = connect_database()
+    conn = get_connection()
     users, tasks, assigned_tasks = load_data()
     sorted_by_prioryty_tasks = tasks[:]
     sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
@@ -154,6 +156,6 @@ def optymize():
     conn.close()
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
-
+conn = get_connection()
 if __name__ == '__main__':
     app.run()

@@ -7,16 +7,18 @@ import json
 
 app = Flask(__name__)
 
-conn = None
 
-try:
-	conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net,1433',
-                      user='NexioIntranetAdmin', password='BarackObama#2019', database='EventAnalyzer')
-except:
-	print('Blad polaczenia')
+def connect_database():
+    try:
+        conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net,1433',
+                          user='NexioIntranetAdmin', password='BarackObama#2019', database='EventAnalyzer')
+        return conn
+    except Exception as e:
+        print('e')
+        return e
 	
 CRITICAL_PRIORITY = [8, 9, 10]
-
+conn = connect_database()
 
 def load_data():
     cursor = conn.cursor()
@@ -130,6 +132,7 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
+    conn = connect_database()
     users, tasks, assigned_tasks = load_data()
     sorted_by_prioryty_tasks = tasks[:]
     sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)

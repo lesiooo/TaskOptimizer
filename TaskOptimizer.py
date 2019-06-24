@@ -50,9 +50,9 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
             avaliables_users = check_availability(task_time, users_time, users_id)
             if avaliables_users:
                 user, time_to_insert = find_closes_free_user(assigned_tasks, avaliables_users)
-                sql = "insert into [tasks].[UserTask] values({},{},\'{}\',\'{}\')".format(user, task_id, time_to_insert,
+                sql = "insert into [tasks].[UserTask] values({},{},\'{}\',\'{}\')".format(user, task_id, time_to_insert + timedelta(seconds=PAUSE_TIME),
                                                                                           time_to_insert + timedelta(
-                                                                                              seconds=task_time))
+                                                                                              seconds=task_time+ PAUSE_TIME))
                 insert_critical_task(sql)
                 tasks_to_update = [task for task in assigned_tasks if
                                    task[1] == user and task[0] != task_id and task[3] >= time_to_insert]
@@ -135,12 +135,17 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
-    conn = connect_database()
-    users, tasks, assigned_tasks = load_data()
-    sorted_by_prioryty_tasks = tasks[:]
-    sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
-    new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
-    insert_assigned_task_to_database(new_assigned)
+    try:
+        conn = connect_database()
+        users, tasks, assigned_tasks = load_data()
+        sorted_by_prioryty_tasks = tasks[:]
+        sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
+        new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
+        insert_assigned_task_to_database(new_assigned)
+        conn.close()
+    finally:
+        print('zamkniete')
+        conn.close()
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
     pass
 

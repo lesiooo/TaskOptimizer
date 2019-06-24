@@ -20,9 +20,9 @@ def connect_database():
 	
 CRITICAL_PRIORITY = [8, 9, 10]
 PAUSE_TIME = 300
-conn = connect_database()
-print(conn)
-
+# conn = connect_database()
+# print(conn)
+conn = None
 def load_data():
     cursor = conn.cursor()
     users = [row for row in cursor.execute('select u.* from [tasks].[User] u;')]
@@ -135,7 +135,7 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
-
+    conn = connect_database()
     users, tasks, assigned_tasks = load_data()
     sorted_by_prioryty_tasks = tasks[:]
     sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)

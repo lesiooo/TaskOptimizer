@@ -6,6 +6,9 @@ from flask import Flask, jsonify
 import json
 
 app = Flask(__name__)
+
+conn = None
+
 try:
 	conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net,1433',
                       user='NexioIntranetAdmin', password='BarackObama#2019', database='EventAnalyzer')

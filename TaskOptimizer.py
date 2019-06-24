@@ -24,16 +24,8 @@ PAUSE_TIME = 300
 
 
 
-def get_connection():
-    global conn
-    if not conn:
-        conn = connect_database()
-    return conn
-
-
-
-
 def load_data():
+    conn = connect_database()
     cursor = conn.cursor()
     users = [row for row in cursor.execute('select u.* from [tasks].[User] u;')]
     tasks = [row for row in cursor.execute(
@@ -43,6 +35,7 @@ def load_data():
     assigned_tasks = [row for row in cursor.execute(
         'select * from [tasks].[UserTask] u where cast(u.start as date) = cast(getdate() as date);')]
     cursor.close()
+    conn.close()
     return users, tasks, assigned_tasks
 
 
@@ -106,6 +99,7 @@ def check_availability(task_time, used_time, users):
 
 
 def insert_assigned_task_to_database(assigned_tasks):
+    conn = connect_database()
     cursor = conn.cursor()
     user_tasks_start_time = dict(((user[1], 0) for user in assigned_tasks))
     for task_id, user_id, task_time in assigned_tasks:
@@ -120,24 +114,28 @@ def insert_assigned_task_to_database(assigned_tasks):
         cursor.execute(insert)
         cursor.commit()
 
-    cursor.close()
 
+    cursor.close()
+    conn.close()
 
 def insert_critical_task(sql_command):
+    conn = connect_database()
     cursor = conn.cursor()
     cursor.execute(sql_command)
     cursor.close()
-
+    conn.close()
 
 def update_time_existed_user_tasks(tasks, added_time):
+    conn = connect_database()
     cursor = conn.cursor()
     for task in tasks:
         update = 'Update [tasks].[UserTask] set [start] = \'{}\', [to] = \'{}\' where id = {};'.format(
             task[3] + timedelta(seconds=added_time),
             task[4] + timedelta(seconds=added_time), task[0])
         cursor.execute(update)
-    # cursor.commit()
+        cursor.commit()
     cursor.close()
+    conn.close()
 
 
 @app.route('/', methods=['GET'])
@@ -147,15 +145,12 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
-    conn = get_connection()
     users, tasks, assigned_tasks = load_data()
     sorted_by_prioryty_tasks = tasks[:]
     sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
     new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
     insert_assigned_task_to_database(new_assigned)
-    conn.close()
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
-conn = get_connection()
 if __name__ == '__main__':
     app.run()

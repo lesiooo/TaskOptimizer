@@ -10,8 +10,8 @@ app = Flask(__name__)
 
 def connect_database():
     try:
-        conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net,1433',
-                          user='NexioIntranetAdmin', password='BarackObama#2019', database='EventAnalyzer')
+        conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net;PORT=1433;'+
+                          'database=EventAnalyzer;UID=NexioIntranetAdmin;PWD=BarackObama#2019')
         return conn
     except Exception as e:
         print('e')
@@ -19,6 +19,7 @@ def connect_database():
 	
 CRITICAL_PRIORITY = [8, 9, 10]
 conn = connect_database()
+print(conn)
 
 def load_data():
     cursor = conn.cursor()

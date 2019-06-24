@@ -101,7 +101,7 @@ def insert_assigned_task_to_database(assigned_tasks):
                                                                                                                 user_id])
         insert = 'INSERT INTO [tasks].[UserTask] values ({},{}, \'{}\', \'{}\');'.format(user_id, task_id,
                                                                                          str(assign_date)[:-3], str(
-                (assign_date + timedelta(seconds=task_time)))[:-3])
+                (assign_date + timedelta(seconds=task_time-300)))[:-3])
         user_tasks_start_time[user_id] += task_time
         cursor.execute(insert)
         cursor.commit()
@@ -120,7 +120,7 @@ def update_time_existed_user_tasks(tasks, added_time):
     for task in tasks:
         update = 'Update [tasks].[UserTask] set [start] = \'{}\', [to] = \'{}\' where id = {};'.format(
             task[3] + timedelta(seconds=added_time),
-            task[4] + timedelta(seconds=added_time), task[0])
+            task[4] + timedelta(seconds=added_time-300), task[0])
         cursor.execute(update)
     # cursor.commit()
     cursor.close()

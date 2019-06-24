@@ -135,20 +135,15 @@ def home():
 
 @app.route('/optymize', methods=['GET'])
 def optymize():
-    try:
-        conn = connect_database()
-        users, tasks, assigned_tasks = load_data()
-        sorted_by_prioryty_tasks = tasks[:]
-        sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
-        new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
-        insert_assigned_task_to_database(new_assigned)
-        conn.close()
-    finally:
-        print('zamkniete')
-        conn.close()
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
-    pass
 
+    conn = connect_database()
+    users, tasks, assigned_tasks = load_data()
+    sorted_by_prioryty_tasks = tasks[:]
+    sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)
+    new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
+    insert_assigned_task_to_database(new_assigned)
+    conn.close()
+    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
 
 
 

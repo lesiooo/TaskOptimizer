@@ -136,7 +136,6 @@ def home():
 @app.route('/optymize', methods=['GET'])
 def optymize():
 
-    conn = connect_database()
     users, tasks, assigned_tasks = load_data()
     sorted_by_prioryty_tasks = tasks[:]
     sorted_by_prioryty_tasks.sort(key=operator.itemgetter(2), reverse=True)

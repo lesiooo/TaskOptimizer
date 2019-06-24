@@ -87,7 +87,7 @@ def find_closes_free_user(assigned_tasks, users):
 def check_availability(task_time, used_time, users):
     avaliable_users = []
     for user in users:
-        if used_time[user] + task_time <= 28800:
+        if used_time[user] + task_time + PAUSE_TIME <= 28800:
             avaliable_users.append(user)
 
     return avaliable_users
@@ -103,7 +103,7 @@ def insert_assigned_task_to_database(assigned_tasks):
                                                                                                                 user_id])
         insert = 'INSERT INTO [tasks].[UserTask] values ({},{}, \'{}\', \'{}\');'.format(user_id, task_id,
                                                                                          str(assign_date)[:-3], str(
-                (assign_date + timedelta(seconds=task_time)))[:-3])
+                                                                                        (assign_date + timedelta(seconds=task_time)))[:-3])
         user_tasks_start_time[user_id] += task_time + PAUSE_TIME
         cursor.execute(insert)
         cursor.commit()

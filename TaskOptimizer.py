@@ -2,27 +2,35 @@ import pypyodbc as pyodbc
 import operator
 from random import randint
 from datetime import datetime, timedelta
-from flask import Flask, jsonify
+from flask import Flask
 import json
 
 app = Flask(__name__)
 
-
 def connect_database():
     try:
-        conn = pyodbc.connect('DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net;PORT=1433;'+
-                          'database=EventAnalyzer;UID=NexioIntranetAdmin;PWD=BarackObama#2019')
+        conn = pyodbc.connect(
+            'DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net;PORT=1433;' +
+            'database=EventAnalyzer;UID=NexioIntranetAdmin;PWD=BarackObama#2019')
 
         return conn
     except Exception as e:
         print('e')
         return e
-	
+
+
 CRITICAL_PRIORITY = [8, 9, 10]
 PAUSE_TIME = 300
-# conn = connect_database()
-# print(conn)
+
 conn = None
+
+def get_connection():
+    global conn
+    if not conn:
+        conn = connect_database()
+    return conn
+
+
 def load_data():
     cursor = conn.cursor()
     users = [row for row in cursor.execute('select u.* from [tasks].[User] u;')]
@@ -50,9 +58,11 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
             avaliables_users = check_availability(task_time, users_time, users_id)
             if avaliables_users:
                 user, time_to_insert = find_closes_free_user(assigned_tasks, avaliables_users)
-                sql = "insert into [tasks].[UserTask] values({},{},\'{}\',\'{}\')".format(user, task_id, time_to_insert + timedelta(seconds=PAUSE_TIME),
+                sql = "insert into [tasks].[UserTask] values({},{},\'{}\',\'{}\')".format(user, task_id,
                                                                                           time_to_insert + timedelta(
-                                                                                              seconds=task_time+ PAUSE_TIME))
+                                                                                              seconds=PAUSE_TIME),
+                                                                                          time_to_insert + timedelta(
+                                                                                              seconds=task_time + PAUSE_TIME))
                 insert_critical_task(sql)
                 tasks_to_update = [task for task in assigned_tasks if
                                    task[1] == user and task[0] != task_id and task[3] >= time_to_insert]
@@ -103,7 +113,7 @@ def insert_assigned_task_to_database(assigned_tasks):
                                                                                                                 user_id])
         insert = 'INSERT INTO [tasks].[UserTask] values ({},{}, \'{}\', \'{}\');'.format(user_id, task_id,
                                                                                          str(assign_date)[:-3], str(
-                                                                                        (assign_date + timedelta(seconds=task_time)))[:-3])
+                (assign_date + timedelta(seconds=task_time)))[:-3])
         user_tasks_start_time[user_id] += task_time + PAUSE_TIME
         cursor.execute(insert)
         cursor.commit()
@@ -143,9 +153,6 @@ def optymize():
     insert_assigned_task_to_database(new_assigned)
     conn.close()
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
-
-
-
 
 
 if __name__ == '__main__':

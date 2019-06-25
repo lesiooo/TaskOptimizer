@@ -50,9 +50,9 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
         task_id = task[0]
         task_time = task[3]
         if task[2] in CRITICAL_PRIORITY and assigned_tasks_tab:
-            avaliables_users = check_availability(task_time, users_time, users_id)
+            avaliables_users = check_availability(users_id, assigned_tasks, task_time)
             if avaliables_users:
-                user, time_to_insert = find_closes_free_user(assigned_tasks, avaliables_users)
+                user, time_to_insert = find_closes_free_user(assigned_tasks, avaliables_users, is_critic=1)
                 sql = "insert into [tasks].[UserTask] values({},{},\'{}\',\'{}\')".format(user, task_id,
                                                                                           time_to_insert + timedelta(
                                                                                               seconds=PAUSE_TIME),
@@ -62,14 +62,21 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
                 tasks_to_update = [task for task in assigned_tasks if
                                    task[1] == user and task[0] != task_id and task[3] >= time_to_insert]
                 if tasks_to_update:
-                    update_time_existed_user_tasks(tasks_to_update, task_time)
-                users_time[user] += task_time + PAUSE_TIME
+                    update_time_existed_user_tasks(tasks_to_update, task_time + PAUSE_TIME)
+                assigned_tasks.append(
+                    [0, user, task_id, time_to_insert, time_to_insert + timedelta(seconds=task_time + PAUSE_TIME)])
         else:
-            avaliables_users = check_availability(task_time, users_time, users_id)
+            avaliables_users = check_availability(users_id, assigned_tasks, task_time)
             if avaliables_users:
-                random_user = randint(0, len(avaliables_users) - 1)
-                users_time[avaliables_users[random_user]] += task_time + PAUSE_TIME
-                assigned_tasks_to_insert.append([task_id, avaliables_users[random_user], task_time])
+                user, time_to_insert = find_closes_free_user(assigned_tasks, avaliables_users, is_critic=0)
+                sql = "insert into [tasks].[UserTask] values({},{},\'{}\',\'{}\')".format(user, task_id,
+                                                                                          time_to_insert + timedelta(
+                                                                                              seconds=PAUSE_TIME),
+                                                                                          time_to_insert + timedelta(
+                                                                                              seconds=task_time + PAUSE_TIME))
+                insert_critical_task(sql)
+                assigned_tasks.append(
+                    [0, user, task_id, time_to_insert, time_to_insert + timedelta(seconds=task_time + PAUSE_TIME)])
 
     return assigned_tasks_to_insert
 
@@ -82,19 +89,48 @@ def update_users_time(assigned_tasks, users_time):
     return users_time
 
 
-def find_closes_free_user(assigned_tasks, users):
-    tasks = [[task[1], task[4], task[2]] for task in assigned_tasks if
-             task[4] > datetime.now() and task[3] < datetime.now() and task[1] in users]
-    first_free_user = (min(tasks, key=lambda t: t[1]))
-    return first_free_user[0], first_free_user[1]
+def find_closes_free_user(assigned_tasks, users, is_critic=0):
+    assigned_users = [task[1] for task in assigned_tasks]
+    if is_critic:
+        tasks = [[task[1], task[4], task[2]] for task in assigned_tasks if
+                 task[4] > datetime.now() and task[3] < datetime.now() and task[1] in users]
+    else:
+        tasks = [[task[1], task[4], task[2]] for task in assigned_tasks if
+                 task[4] > datetime.now() and task[1] in users]
+    if assigned_tasks:
+        not_used_users = [user for user in users if user not in assigned_users]
+        if not_used_users:
+            return not_used_users[0], datetime.now().replace(second=0, microsecond=0)
+        if is_critic:
+            first_free_user = (min(tasks, key=lambda t: t[1]))
+        else:
+            last_tasks = find_last_user_task(users, assigned_tasks)
+            first_free_user = (min(last_tasks, key=lambda t: t[1]))
+        return first_free_user[0], first_free_user[1]
+    else:
+        return users[0], datetime.now().replace(second=0, microsecond=0)
 
 
-def check_availability(task_time, used_time, users):
-    avaliable_users = []
+def find_last_user_task(users, assigned_tasks):
+    last_tasks = []
     for user in users:
-        if used_time[user] + task_time + PAUSE_TIME <= 28800:
-            avaliable_users.append(user)
+        user_tasks = [[task[1], task[4]] for task in assigned_tasks if task[1] == user]
+        if user_tasks:
+            last_tasks.append((max(user_tasks, key=lambda t: t[1])))
+        else:
+            last_tasks.append([user, datetime.now().replace(second=0, microsecond=0)])
+    return last_tasks
 
+
+def check_availability(users, assigned_tasks, task_time):
+    last_tasks = find_last_user_task(users, assigned_tasks)
+    avaliable_users = []
+    actual_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    for user in users:
+        is_avaliable = [task[0] for task in last_tasks if task[0] == user
+                           and (task[1] - actual_date).total_seconds()+ task_time + PAUSE_TIME <= 57600]
+        if is_avaliable:
+            avaliable_users.append(is_avaliable[0])
     return avaliable_users
 
 
@@ -122,6 +158,7 @@ def insert_critical_task(sql_command):
     conn = connect_database()
     cursor = conn.cursor()
     cursor.execute(sql_command)
+    cursor.commit()
     cursor.close()
     conn.close()
 
@@ -151,6 +188,9 @@ def optymize():
     new_assigned = assign_task_to_users(users, sorted_by_prioryty_tasks, assigned_tasks)
     insert_assigned_task_to_database(new_assigned)
     return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+
+
+
 
 if __name__ == '__main__':
     app.run()

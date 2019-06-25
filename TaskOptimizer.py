@@ -1,6 +1,5 @@
 import pypyodbc as pyodbc
 import operator
-from random import randint
 from datetime import datetime, timedelta
 from flask import Flask
 import json
@@ -102,7 +101,10 @@ def find_closes_free_user(assigned_tasks, users, is_critic=0):
         if not_used_users:
             return not_used_users[0], datetime.now().replace(second=0, microsecond=0)
         if is_critic:
-            first_free_user = (min(tasks, key=lambda t: t[1]))
+            if tasks:
+                first_free_user = (min(tasks, key=lambda t: t[1]))
+            else:
+                return users[0], datetime.now().replace(second=0, microsecond=0)
         else:
             last_tasks = find_last_user_task(users, assigned_tasks)
             first_free_user = (min(last_tasks, key=lambda t: t[1]))
@@ -194,3 +196,4 @@ def optymize():
 
 if __name__ == '__main__':
     app.run()
+    

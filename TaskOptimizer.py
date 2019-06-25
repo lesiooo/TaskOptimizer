@@ -11,7 +11,6 @@ def connect_database():
         conn = pyodbc.connect(
             'DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net;PORT=1433;' +
             'database=EventAnalyzer;UID=NexioIntranetAdmin;PWD=BarackObama#2019')
-
         return conn
     except Exception as e:
         print('e')
@@ -28,9 +27,7 @@ def load_data():
     cursor = conn.cursor()
     users = [row for row in cursor.execute('select u.* from [tasks].[User] u;')]
     tasks = [row for row in cursor.execute(
-        'select t.* from [tasks].[Task] t where t.id not in (select id from [tasks].[UserTask] ut where ut.start < \'{}\');'.format(
-            datetime.now().today().replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
-        ))]
+        'select t.* from [tasks].[Task] t where t.id not in (select TaskId from [tasks].[UserTask]);')]
     assigned_tasks = [row for row in cursor.execute(
         'select * from [tasks].[UserTask] u where cast(u.start as date) = cast(getdate() as date);')]
     cursor.close()
@@ -62,8 +59,8 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
                                    task[1] == user and task[0] != task_id and task[3] >= time_to_insert]
                 if tasks_to_update:
                     update_time_existed_user_tasks(tasks_to_update, task_time + PAUSE_TIME)
-                assigned_tasks.append(
-                    [0, user, task_id, time_to_insert, time_to_insert + timedelta(seconds=task_time + PAUSE_TIME)])
+                    assigned_tasks.append(
+                        [task[0], user, task_id, time_to_insert, time_to_insert + timedelta(seconds=task_time + PAUSE_TIME)])
         else:
             avaliables_users = check_availability(users_id, assigned_tasks, task_time)
             if avaliables_users:
@@ -196,4 +193,3 @@ def optymize():
 
 if __name__ == '__main__':
     app.run()
-    

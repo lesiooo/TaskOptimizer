@@ -1,5 +1,6 @@
 import pypyodbc as pyodbc
 import operator
+from random import randint
 from datetime import datetime, timedelta
 from flask import Flask
 import json
@@ -11,6 +12,9 @@ def connect_database():
         conn = pyodbc.connect(
             'DRIVER={ODBC Driver 17 for SQL Server};SERVER=tcp:nexiointranet-dev.database.windows.net;PORT=1433;' +
             'database=EventAnalyzer;UID=NexioIntranetAdmin;PWD=BarackObama#2019')
+        # conn = pyodbc.connect(
+        #     'DRIVER={SQL Server};SERVER=DESKTOP-LEJJ4V0;PORT=1433;' +
+        #     'database=EATasks;')
         return conn
     except Exception as e:
         print('e')
@@ -19,7 +23,6 @@ def connect_database():
 
 CRITICAL_PRIORITY = [8, 9, 10]
 PAUSE_TIME = 300
-
 
 
 def load_data():
@@ -57,6 +60,10 @@ def assign_task_to_users(users, tasks, assigned_tasks_tab):
                 insert_critical_task(sql)
                 tasks_to_update = [task for task in assigned_tasks if
                                    task[1] == user and task[0] != task_id and task[3] >= time_to_insert]
+                for assigned_task in assigned_tasks:
+                    if assigned_task[2] in tasks_to_update:
+                        assigned_task[3] += timedelta(seconds=task_time + PAUSE_TIME)
+                        assigned_tasks[4] += timedelta(seconds=task_time + PAUSE_TIME)
                 if tasks_to_update:
                     update_time_existed_user_tasks(tasks_to_update, task_time + PAUSE_TIME)
                     assigned_tasks.append(
@@ -127,7 +134,7 @@ def check_availability(users, assigned_tasks, task_time):
     actual_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     for user in users:
         is_avaliable = [task[0] for task in last_tasks if task[0] == user
-                           and (task[1] - actual_date).total_seconds()+ task_time + PAUSE_TIME <= 57600]
+                           and (task[1] - actual_date).total_seconds()+ task_time + PAUSE_TIME <= 64800]
         if is_avaliable:
             avaliable_users.append(is_avaliable[0])
     return avaliable_users
@@ -190,6 +197,6 @@ def optymize():
 
 
 
-
 if __name__ == '__main__':
     app.run()
+

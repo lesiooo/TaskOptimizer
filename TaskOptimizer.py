@@ -127,7 +127,7 @@ def check_availability(users, assigned_tasks, task_time):
     actual_date = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     for user in users:
         is_avaliable = [task[0] for task in last_tasks if task[0] == user
-                           and (task[1] - actual_date).total_seconds()+ task_time + PAUSE_TIME <= 57600]
+                           and (task[1] - actual_date).total_seconds()+ task_time + PAUSE_TIME <= 64800]
         if is_avaliable:
             avaliable_users.append(is_avaliable[0])
     return avaliable_users

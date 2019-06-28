@@ -28,7 +28,7 @@ START_DAY = 28800
 
 
 def get_current_time():
-    return datetime.now() - timedelta(hours=7, minutes=30)
+    return datetime.now() + timedelta(hours=2)
 
 
 def load_data():

@@ -158,6 +158,7 @@ def find_min_route(cities, locations):
 
 def detect_location_files(city_list):
     files = glob.glob('*/*.txt', recursive=True)
+    print(files)
     if 'data\location_with_tolls.txt' and 'data\location_without_tolls.txt' not in files:
         print("brak pliku")
         save_traces(city_list)

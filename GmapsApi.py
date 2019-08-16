@@ -190,7 +190,10 @@ def get_trace_data():
     print('minimum km: ', min_km)
     print("minimum time: ", min_time)
 
-    return json.dumps({'success': True}), 200, {'ContentType': 'application/json'}
+    return json.dumps(
+        {"minimum km": {"trace": min_km[0], "trace_time": timedelta(seconds=min_km[1]), "trace_length": min_km[2]},
+         "minimum time": {"trace": min_time[0], "trace_time": timedelta(seconds=min_time[1]), "trace_length": min_time[2]}}
+    ), 200, {'ContentType': 'application/json'}
 
 if __name__ == '__main__':
     app.run(debug=True)

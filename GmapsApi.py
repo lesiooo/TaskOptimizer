@@ -74,19 +74,7 @@ def append_traces_to_files(city1, city2):
             line_to_save = '{};{};{};{}\n'.format(str(item[0]), str(item[1]),
                                                   str(item[2]), str(item[3]))
             f.write(line_to_save)
-    with open('data/city_dict.json', 'r', encoding='utf-8') as f:
-        try:
-            city_dict = json.load(f)
-        except:
-            city_dict = {}
 
-        with open('data/city_dict.json', 'w', encoding='utf-8') as wf:
-            for item in traces_without_tolls:
-                if item[0] not in city_dict:
-                    city_dict[item[0]] = len(city_dict)
-                if item[1] not in city_dict:
-                    city_dict[item[1]] = len(city_dict)
-            json.dump(dict(city_dict), wf, ensure_ascii=False)
 
 
 def save_traces(city_list):
@@ -101,12 +89,6 @@ def save_traces(city_list):
         for item in traces_with_tolls:
             line_to_save = '{};{};{};{}\n'.format(str(item[0]), str(item[1]), str(item[2]), str(item[3]))
             f.write(line_to_save)
-
-    with open('data/city_dict.json', 'w', encoding='utf-8') as f:
-        city_dict = {}
-        for iter, item in enumerate(set(city_list)):
-            city_dict[item] = iter
-        json.dump(dict(city_dict), f, ensure_ascii=False)
 
 
 def load_locations_from_file(avoid_tolls=False):
@@ -160,7 +142,6 @@ def detect_location_files(city_list):
     files = glob.glob('*/*.txt', recursive=True)
     print(files)
     if 'data/location_with_tolls.txt' and 'data/location_without_tolls.txt' not in files:
-        print("brak pliku")
         save_traces(city_list)
     else:
         is_location_in_file(city_list)
@@ -187,13 +168,11 @@ def get_trace_data():
     detect_location_files(cities)
 
     min_time, min_km = find_min_route(cities, load_locations_from_file(avoid_tolls=avoid_tolls))
-    print('minimum km: ', min_km)
-    print("minimum time: ", min_time)
 
     return json.dumps(
-        {"minimum km": {"trace": min_km[0], "trace_time": timedelta(seconds=min_km[1]), "trace_length": min_km[2]},
-         "minimum time": {"trace": min_time[0], "trace_time": timedelta(seconds=min_time[1]), "trace_length": min_time[2]}}
-    ), 200, {'ContentType': 'application/json'}
+        {"minimum km": {"trace": min_km[0], "trace_time": str(timedelta(seconds=min_km[1])), "trace_length": min_km[2]},
+         "minimum time": {"trace": min_time[0], "trace_time": str(timedelta(seconds=min_time[1])), "trace_length": min_time[2]}},
+        ensure_ascii = False), 200, {'ContentType': 'application/json'}
 
 if __name__ == '__main__':
     app.run(debug=True)

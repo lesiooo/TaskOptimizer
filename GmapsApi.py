@@ -164,9 +164,9 @@ def get_trace_data():
 
     if start_point in cities:
         cities.remove(start_point)
-    elif end_point in cities:
+    if end_point in cities:
         cities.remove(end_point)
-        
+
     cities = list(set(cities))
     cities.insert(0, str(start_point))
     cities.append(end_point)

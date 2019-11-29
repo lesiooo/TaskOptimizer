@@ -147,7 +147,7 @@ def detect_location_files(city_list):
         is_location_in_file(city_list)
 
 
-@app.route('/map-optymize', methods=['GET'])
+@app.route('/map-optymize', methods=['POST'])
 def get_trace_data():
     try:
         req_data = request.get_json()

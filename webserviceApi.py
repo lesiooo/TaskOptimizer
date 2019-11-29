@@ -14,7 +14,7 @@ def optymize():
     return response
 
 
-@app.route('/map-optymize', methods=['GET'])
+@app.route('/map-optymize', methods=['POST'])
 def get_trace_data():
     response = GmapsApi.get_trace_data()
     return response

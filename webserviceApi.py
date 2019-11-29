@@ -18,6 +18,8 @@ def optymize():
 def get_trace_data():
     response = GmapsApi.get_trace_data()
     return response
+
+
 if __name__ == '__main__':
     app.run()
 
